@@ -11,43 +11,50 @@ var multichain = require("multichain-node")({
 client.on("connect", function() {
   client.subscribe("vehicledata", function(err) {
     if (!err) {
-      client.publish("vehicledata", "123456789");
+      // client.publish("vehicledata", "123456789");
     }
   });
 });
 
-client.on("message", function(topic, message) {
-  // message is Buffer
-	console.log(typeof(message))
-  	console.log(message.toString("utf8"));
-  multichain.publish(
-    { stream: message.VIN, key: "test", data:message.toString("hex")},
-
- (err, tx) => {
+function mchain_create_stream(message) {
+  multichain.create(
+    {
+      type: "stream",
+      name: message.VIN,
+      open: false,
+      details: {}
+    },
+    (err, tx) => {
       if (err) {
         console.log(err);
-	if(err.code == -705){
-		multichain.create(
-  {
-    type: "stream",
-    name: "test_stream",
-    open: false,
-    details: {}
-  },
-  (err, tx) => {
-    if (err) {
-      console.log(err);
-    }
-    console.log(tx);
-  }
-);
-
-	}
       }
       console.log(tx);
     }
   );
-  //   client.end();
+}
+function mchain_publish(message) {
+  multichain.publish(
+    { stream: message.VIN, key: "test", data: message.toString("hex") },
+    (err, tx) => {
+      if (err) {
+        console.log(err);
+        console.log(typeof err.code);
+        if (err.code == -705) {
+          mchain_create_stream(message);
+          mchain_publish(message);
+        }
+      }
+      console.log(tx);
+    }
+  );
+}
+
+client.on("message", function(topic, message) {
+  // message is Buffer
+  console.log(typeof message);
+  console.log(message.toString("utf8"));
+
+  mchain_publish(message);
 });
 
 multichain.getInfo((err, info) => {
@@ -57,26 +64,12 @@ multichain.getInfo((err, info) => {
 
   console.log(info);
 });
-multichain.create(
-  {
-    type: "stream",
-    name: "test_stream",
-    open: false,
-    details: {}
-  },
-  (err, tx) => {
-    if (err) {
-      console.log(err);
-    }
-    console.log(tx);
-  }
-);
 
 multichain.listStreams(
   {
     stream: "*",
     verbose: false,
-    count: 5,
+    count: 500,
     start: 0
   },
   (err, tx) => {
