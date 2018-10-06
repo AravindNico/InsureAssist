@@ -1,18 +1,11 @@
 var mqtt = require("mqtt");
 var client = mqtt.connect("mqtt://18.220.57.224");
 
-// var multichain = require("multichain-node")({
-//   port: 2748,
-//   host: "127.0.0.1",
-//   user: "multichainrpc",
-//   pass: "HbsbMsJ7db1LNDXYDMcLuXSXCyubfAFr71jJbf5R83KR"
-// });
-
 var multichain = require("multichain-node")({
-  port: 6470,
-  host: "18.220.57.224",
+  port: 7178,
+  host: "127.0.0.1",
   user: "multichainrpc",
-  pass: "8KCH5udBbfBtpN9JSKKp5ommxEaVsvi7izgfRX4vb9qg"
+  pass: "HKMWUdoPMQq5RLDiKRgpdXQSpwxGr5Z7oaLcMthEty5t"
 });
 
 client.on("connect", function() {
@@ -25,13 +18,31 @@ client.on("connect", function() {
 
 client.on("message", function(topic, message) {
   // message is Buffer
-  console.log(message.toString("utf8"));
-  console.log(message.toString("hex").toString("utf8"));
+	console.log(typeof(message))
+  	console.log(message.toString("utf8"));
   multichain.publish(
-    { stream: "test_stream", key: "test", data: message.toString("hex") },
-    (err, tx) => {
+    { stream: message.VIN, key: "test", data:message.toString("hex")},
+
+ (err, tx) => {
       if (err) {
         console.log(err);
+	if(err.code == -705){
+		multichain.create(
+  {
+    type: "stream",
+    name: "test_stream",
+    open: false,
+    details: {}
+  },
+  (err, tx) => {
+    if (err) {
+      console.log(err);
+    }
+    console.log(tx);
+  }
+);
+
+	}
       }
       console.log(tx);
     }
