@@ -17,6 +17,8 @@ client.on("connect", function() {
 });
 
 function mchain_create_stream(message) {
+//var message = JSON.parse(mess)
+console.log("IN CREATE STREAM: ",message.VIN)
   multichain.create(
     {
       type: "stream",
@@ -26,23 +28,29 @@ function mchain_create_stream(message) {
     },
     (err, tx) => {
       if (err) {
-        console.log(err);
+        console.log("in creation error: ",err);
       }
       console.log(tx);
     }
   );
 }
 function mchain_publish(message) {
+//	mchain_create_stream(message);
+
+var d = JSON.parse(message)
+
   multichain.publish(
-    { stream: message.VIN, key: "test", data: message.toString("hex") },
+    { stream: d.VIN, key: "test", data:new Buffer( message).toString("hex") },
     (err, tx) => {
       if (err) {
         console.log(err);
         console.log(typeof err.code);
-        if (err.code == -705) {
-          mchain_create_stream(message);
-          mchain_publish(message);
-        }
+        if (err.code == -705 || err.code == -708) {
+          mchain_create_stream(d);
+          mchain_publish(d);
+        }else{
+		console.log("in else")
+	}
       }
       console.log(tx);
     }
@@ -53,8 +61,8 @@ client.on("message", function(topic, message) {
   // message is Buffer
   console.log(typeof message);
   console.log(message.toString("utf8"));
-
-  mchain_publish(message);
+mchain_publish(message.toString("utf8"));
+ // mchain_publish(JSON.parse(message.toString("utf8")));
 });
 
 multichain.getInfo((err, info) => {
@@ -67,16 +75,16 @@ multichain.getInfo((err, info) => {
 
 multichain.listStreams(
   {
-    stream: "*",
+    stream: "1234567890",
     verbose: false,
     count: 500,
     start: 0
   },
   (err, tx) => {
     if (err) {
-      console.log(err);
+      console.log("list:",err);
     }
-    console.log(tx);
+    console.log("list :",tx);
   }
 );
 
